@@ -1,6 +1,8 @@
 const Client = require('../model/client')
+const Admin = require('../model/admin')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+
 
 const SignUpClient = async (req, res) => {
     const checkclient = await Client.find({ email: req.body.email })
@@ -45,7 +47,8 @@ const SignUpClient = async (req, res) => {
                     res.status(201).json({
                         message: 'User created successfully',
                         token,
-                        clientExists: false
+                        clientExists: false,
+                        id: user._id
                     })
                 }
                 catch (err) {
@@ -85,7 +88,8 @@ const LoginClient = async (req, res) => {
                 )
                 return res.status(200).json({
                     messagae: "Auth Successful",
-                    token: token
+                    token: token,
+                    id: user._id
                 })
             }
             res.status(401).json({
@@ -101,16 +105,49 @@ const LoginClient = async (req, res) => {
 }
 
 
-const GetClient = async (req, res) => {
-    const userId = req.userData.userId
+
+const GetAllClients = async (req, res) => {
+    const userData = req.userData
     try {
-        const user = await Client.findOne({ _id: userId })
-        if (!user) {
+        // const admin = await Admin.findOne({ _id: userData.adminId })
+        // if (!admin) {
+        //     return res.status(401).json({
+        //         message: 'auth token invalid'
+        //     })
+        // }
+        const clients = await Client.find()
+        res.status(200).json(clients)
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+
+}
+
+
+
+const GetClient = async (req, res) => {
+    const userData = req.userData
+    try {
+        const user = await Client.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json(user)
+        if (user) {
+            res.status(200).json(user)
+        }
+        else {
+            const user = await Client.findOne({ _id: req.params.id })
+            if (!user) {
+                return res.status(404).json({ msg: `No client with id ${req.params.id}` })
+            }
+            res.status(200).json(user)
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -121,15 +158,27 @@ const GetClient = async (req, res) => {
 
 
 const DeleteClient = async (req, res) => {
-    const userId = req.userData.userId
+    const userData = req.userData
     try {
-        const user = await Client.findOneAndDelete({ _id: userId })
-        if (!user) {
+        const user = await Client.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        // const user = await Client.findOneAndDelete({ _id: userId })
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json({ message: 'User deleted successfully' })
+        if (user) {
+            const user = await Client.findOneAndDelete({ _id: userData.userId })
+            res.status(200).json({ message: 'User deleted successfully' })
+        }
+        else {
+            const user = await Client.findOneAndDelete({ _id: req.params.id })
+            if (!user) {
+                return res.status(404).json({ msg: `No client with id ${req.params.id}` })
+            }
+            res.status(200).json({ message: 'User deleted successfully' })
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -140,7 +189,7 @@ const DeleteClient = async (req, res) => {
 
 
 const UpdateClient = async (req, res) => {
-    const userId = req.userData.userId
+    const userData = req.userData
     const newObj = {}
     for (let i = 0; i < Object.keys(req.body).length; i++) {
         if (Object.keys(req.body)[i] == 'password') {
@@ -168,13 +217,25 @@ const UpdateClient = async (req, res) => {
     }
 
     try {
-        const user = await Client.findOneAndUpdate({ _id: userId }, newObj)
-        if (!user) {
+        const user = await Client.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        // const user = await Client.findOneAndUpdate({ _id: userId }, newObj)
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json({ message: 'User updated successfully' })
+        if (user) {
+            const user = await Client.findOneAndUpdate({ _id: userData.userId }, newObj)
+            res.status(200).json({ message: 'User updated successfully' })
+        }
+        else {
+            const user = await Client.findOneAndUpdate({ _id: req.params.id }, newObj)
+            if (!user) {
+                return res.status(404).json({ msg: `No client with id ${req.params.id}` })
+            }
+            res.status(200).json({ message: 'User updated successfully' })
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -209,6 +270,7 @@ const UpdateClient = async (req, res) => {
 module.exports = {
     SignUpClient,
     LoginClient,
+    GetAllClients,
     GetClient,
     UpdateClient,
     DeleteClient,
