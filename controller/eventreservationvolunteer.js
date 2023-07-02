@@ -14,7 +14,8 @@ const CreateEventReservation = async (req, res) => {
             eventGroupID: data.eventGroupID,
         })
         res.status(201).json({
-            message: 'EventReservationVolunteer added successfully'
+            message: 'EventReservationVolunteer added successfully',
+            id: eventReservationVolunteer._id
         })
     }
     catch (err) {
@@ -22,6 +23,21 @@ const CreateEventReservation = async (req, res) => {
             error: err
         })
     }
+}
+
+
+
+const GetAllEventReservations = async (req, res) => {
+    try {
+        const eventReservationVolunteer = await EventReservationVolunteer.find()
+        res.status(200).json(eventReservationVolunteer)
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+
 }
 
 
@@ -111,6 +127,7 @@ module.exports = {
     CreateEventReservation,
     GetEventReservations,
     GetSingleEventReservation,
+    GetAllEventReservations,
     UpdateEventReservation,
     DeleteEventReservation
 }
