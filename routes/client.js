@@ -1,12 +1,11 @@
 const router = require("express").Router();
-const { SignUpClient, LoginClient, GetClient, DeleteClient, UpdateClient, GetAllClients } = require('../controller/client')
+const { SignUpVolunteer, LoginVolunteer, GetVolunteer, DeleteVolunteer, UpdateVolunteer } = require('../controller/volunteer')
 const { CheckUser } = require('../middleware/checkuser')
 
-router.route('/signup').post(SignUpClient)
-router.route('/login').post(LoginClient)
-router.route('/getall').get(GetAllClients)
+router.route('/signup').post(SignUpVolunteer)
+router.route('/login').post(LoginVolunteer)
 // router.route('/forgetpassword').patch(ForgetPassword)
-router.route('/:id').get(CheckUser, GetClient).delete(CheckUser, DeleteClient).patch(CheckUser, UpdateClient)
+router.route('/').get(CheckUser, GetVolunteer).delete(CheckUser, DeleteVolunteer).patch(CheckUser, UpdateVolunteer)
 
 
 module.exports = router
