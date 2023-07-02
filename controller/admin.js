@@ -27,7 +27,8 @@ const SignUpAdmin = async (req, res) => {
                         organization: req.body.organization
                     })
                     res.status(201).json({
-                        message: 'Admin created successfully'
+                        message: 'Admin created successfully',
+                        id: admin._id
                     })
                 }
                 catch (err) {
@@ -67,7 +68,8 @@ const LoginAdmin = async (req, res) => {
                 )
                 return res.status(200).json({
                     messagae: "Auth Successful",
-                    token: token
+                    token: token,
+                    id: admin._id
                 })
             }
             res.status(401).json({
@@ -83,6 +85,27 @@ const LoginAdmin = async (req, res) => {
 }
 
 
+const GetAllAdmins = async (req, res) => {
+    const userData = req.userData
+
+    try {
+        // const admin = await Admin.findOne({ _id: userData.adminId })
+        // if (!admin) {
+        //     return res.status(401).json({
+        //         message: 'auth token invalid'
+        //     })
+        // }
+        const admins = await Admin.find()
+        res.status(200).json(admins)
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+
+}
+
 const GetAdmin = async (req, res) => {
     const adminId = req.userData.adminId
     try {
@@ -92,7 +115,11 @@ const GetAdmin = async (req, res) => {
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json(admin)
+        const data = await Admin.findOne({ _id: req.params.id })
+        if (!data) {
+            return res.status(404).json({ msg: `No admin with id ${req.params.id}` })
+        }
+        res.status(200).json(data)
     }
     catch (err) {
         res.status(500).json({
@@ -106,11 +133,15 @@ const GetAdmin = async (req, res) => {
 const DeleteAdmin = async (req, res) => {
     const adminId = req.userData.adminId
     try {
-        const admin = await Admin.findOneAndDelete({ _id: adminId })
+        const admin = await Admin.findOne({ _id: adminId })
         if (!admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
+        }
+        const data = await Admin.findOneAndDelete({ _id: req.params.id })
+        if (!data) {
+            return res.status(404).json({ msg: `No admin with id ${req.params.id}` })
         }
         res.status(200).json({ message: 'Admin deleted successfully' })
     }
@@ -131,11 +162,15 @@ const UpdateAdmin = async (req, res) => {
         newObj[Object.keys(req.body)[i]] = Object.values(req.body)[i]
     }
     try {
-        const admin = await Admin.findOneAndUpdate({ _id: adminId }, newObj)
+        const admin = await Admin.findOne({ _id: adminId })
         if (!admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
+        }
+        const data = await Admin.findOneAndUpdate({ _id: req.params.id }, newObj)
+        if (!data) {
+            return res.status(404).json({ msg: `No admin with id ${req.params.id}` })
         }
         res.status(200).json({ message: 'Admin updated successfully' })
     }
@@ -152,6 +187,7 @@ const UpdateAdmin = async (req, res) => {
 module.exports = {
     SignUpAdmin,
     LoginAdmin,
+    GetAllAdmins,
     GetAdmin,
     UpdateAdmin,
     DeleteAdmin
