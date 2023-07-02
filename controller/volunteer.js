@@ -1,4 +1,5 @@
 const Volunteer = require('../model/volunteer')
+const Admin = require('../model/admin')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -46,7 +47,8 @@ const SignUpVolunteer = async (req, res) => {
                     res.status(201).json({
                         message: 'User created successfully',
                         token,
-                        volunteerExists: false
+                        volunteerExists: false,
+                        id: volunteer._id
                     })
                 }
                 catch (err) {
@@ -86,7 +88,8 @@ const LoginVolunteer = async (req, res) => {
                 )
                 return res.status(200).json({
                     messagae: "Auth Successful",
-                    token: token
+                    token: token,
+                    id: user._id
                 })
             }
             res.status(401).json({
@@ -102,16 +105,56 @@ const LoginVolunteer = async (req, res) => {
 }
 
 
-const GetVolunteer = async (req, res) => {
-    const userId = req.userData.userId
+
+
+const GetAllVolunteers = async (req, res) => {
+    const userData = req.userData
+
     try {
-        const user = await Volunteer.findOne({ _id: userId })
-        if (!user) {
+        // const admin = await Admin.findOne({ _id: userData.adminId })
+        // if (!admin) {
+        //     return res.status(401).json({
+        //         message: 'auth token invalid'
+        //     })
+        // }
+
+        const volunteers = await Volunteer.find()
+        res.status(200).json(volunteers)
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+
+}
+
+
+
+
+
+const GetVolunteer = async (req, res) => {
+    const userData = req.userData
+
+    try {
+        // const user = await Volunteer.findOne({ _id: userId })
+        const user = await Volunteer.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json(user)
+        if (user) {
+            res.status(200).json(user)
+        }
+        else {
+            const user = await Volunteer.findOne({ _id: req.params.id })
+            if (!user) {
+                return res.status(404).json({ msg: `No volunteer with id ${req.params.id}` })
+            }
+            res.status(200).json(user)
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -122,15 +165,26 @@ const GetVolunteer = async (req, res) => {
 
 
 const DeleteVolunteer = async (req, res) => {
-    const userId = req.userData.userId
+    const userData = req.userData
     try {
-        const user = await Volunteer.findOneAndDelete({ _id: userId })
-        if (!user) {
+        const user = await Volunteer.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json({ message: 'User deleted successfully' })
+        if (user) {
+            const user = await Volunteer.findOneAndDelete({ _id: userData.userId })
+            res.status(200).json({ message: 'User deleted successfully' })
+        }
+        else {
+            const user = await Volunteer.findOneAndDelete({ _id: req.params.id })
+            if (!user) {
+                return res.status(404).json({ msg: `No volunteer with id ${req.params.id}` })
+            }
+            res.status(200).json({ message: 'User deleted successfully' })
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -141,7 +195,7 @@ const DeleteVolunteer = async (req, res) => {
 
 
 const UpdateVolunteer = async (req, res) => {
-    const userId = req.userData.userId
+    const userData = req.userData
     const newObj = {}
     for (let i = 0; i < Object.keys(req.body).length; i++) {
         if (Object.keys(req.body)[i] == 'password') {
@@ -168,13 +222,25 @@ const UpdateVolunteer = async (req, res) => {
         }
     }
     try {
-        const user = await Volunteer.findOneAndUpdate({ _id: userId }, newObj)
-        if (!user) {
+        const user = await Volunteer.findOne({ _id: userData.userId })
+        const admin = await Admin.findOne({ _id: userData.adminId })
+        // const user = await Volunteer.findOneAndUpdate({ _id: userId }, newObj)
+        if (!user && !admin) {
             return res.status(401).json({
                 message: 'auth token invalid'
             })
         }
-        res.status(200).json({ message: 'User updated successfully' })
+        if (user) {
+            const user = await Volunteer.findOneAndUpdate({ _id: userData.userId }, newObj)
+            res.status(200).json({ message: 'User updated successfully' })
+        }
+        else {
+            const user = await Volunteer.findOneAndUpdate({ _id: req.params.id }, newObj)
+            if (!user) {
+                return res.status(404).json({ msg: `No volunteer with id ${req.params.id}` })
+            }
+            res.status(200).json({ message: 'User updated successfully' })
+        }
     }
     catch (err) {
         res.status(500).json({
@@ -210,6 +276,7 @@ const UpdateVolunteer = async (req, res) => {
 module.exports = {
     SignUpVolunteer,
     LoginVolunteer,
+    GetAllVolunteers,
     GetVolunteer,
     UpdateVolunteer,
     DeleteVolunteer,
