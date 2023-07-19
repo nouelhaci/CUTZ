@@ -57,10 +57,6 @@ const Admin = new mongoose.Schema({
     },
     profilePicture: {
         type: String,
-    },
-    isSuperAdmin: {
-        type: Boolean,
-        default: true
     }
 })
 
